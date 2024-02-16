@@ -40,7 +40,7 @@ def register(peername, IPv4addr, mport, pport):
     # Check if mport and pport are unique
     for peer in peerList:
         if peer.mp == mport or peer.pp == pport:
-            return "FAILURE! Ports must be unique."
+            return "FAILURE! Ports already in use."
 
     # Check if peername is already registered
     if any(peer.peername == peername for peer in peerList):
