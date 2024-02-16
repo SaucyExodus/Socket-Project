@@ -20,6 +20,7 @@ class DHT:
 peerList = []
 
 dht_set_up = False
+manager_state = "IDLE"
 
 def printPeerList():
     for peer in peerList:
@@ -59,7 +60,11 @@ def register(peername, IPv4addr, mport, pport):
 
 def setup_dht(peername, n, year):
 
-    global dht_set_up 
+    global dht_set_up, manager_state
+
+    # Check if the manager is in an idle state
+    if manager_state != "IDLE":
+        return "FAILURE! Manager is not available to process setup-dht request."
 
     # Check if the peer name is registered
     if not any(peer.peername == peername for peer in peerList):
@@ -95,6 +100,31 @@ def setup_dht(peername, n, year):
     # List of n peers that together will construct the DHT
     dht_peers = [(peername, peer.ipv4addr, peer.pp) for peer in [next(peer for peer in peerList if peer.peername == peername)] + selected_peers]
 
+    # Update manager status to WAITING_DHT_COMPLETE
+    manager_state = "WAITING_DHT_COMPLETE"
+
     # Set dht_set_up to true and print list of peers
     dht_set_up = True
     return "SUCCESS! DHT is set up.", dht_peers
+
+def dht_complete(peername):
+
+    global dht_set_up, manager_state
+
+    # Check if the manager is waiting for dht-complete
+    if manager_state != "WAITING_DHT_COMPLETE":
+        return "FAILURE! Manager is not waiting for DHT-complete."
+
+    if not dht_set_up:
+        return "FAILURE! DHT has not been set up yet."
+    
+    # Check if the provided peer name matches the leader of the DHT
+    leader_found = any(peer.peername == peername and peer.status == "Leader" for peer in peerList)
+    if not leader_found:
+        return "FAILURE! The provided peer name is not the leader of the DHT."
+    
+    # Reset manager state to idle
+    manager_state = "IDLE"
+
+    # Respond with SUCCESS to the leader
+    return "SUCCESS! DHT setup completed successfully."
