@@ -51,13 +51,6 @@ def main():
              
         # Send a message to server
         message = input()
-        
-        # Close the clients socket
-        if message == "close":
-            receive_thread.join()
-            client_sock.close()
-            break
-
         client_sock.sendto(message.encode("utf-8"), (server_IP, server_port))
 
 if __name__ == "__main__":

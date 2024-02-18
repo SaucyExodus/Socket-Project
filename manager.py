@@ -274,7 +274,7 @@ def command_execution(command_name):
     elif command[0] == "Hello":
         command_response = "[You are now connected]\n"
     elif command[0] == "port":
-        command_response = "Peers port is:" + str(client_address[1])
+        command_response = "Peers port is: " + str(client_address[1])
     else:
         command_response = "FAILURE! Couldn't find command: {}".format(command[0])
      
