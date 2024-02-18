@@ -156,9 +156,9 @@ def setup_dht(peername, n, year):
         print("\n", header)
         print("\n", rows[0:5])
         print("\n", count)
-    elif year == "1951":
+    elif year == "1952":
         # Open the CSV file for 1950
-        with open("./details-1951.csv", 'r') as file:
+        with open("./details-1952.csv", 'r') as file:
             csvreader = csv.reader(file)
             header = next(csvreader)
             for row in csvreader:
