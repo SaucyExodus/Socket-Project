@@ -162,6 +162,11 @@ def setup_dht(peername, n, year):
                 rows.append(row)
                 hash_table(row, n)
                 numOfStormEvents += 1
+
+    print("Final hash table information:")
+    for peer in DHT_list:
+        event_count = len(peer.local_hash_table)
+        print(f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}")
         #print("\n", header)
         #print("\n", rows[0:5])
         #print("\n", numOfStormEvents)
@@ -221,11 +226,11 @@ def hash_table(row, n):
         send_row_to_peer(peer_to_store, row)
     
 # Print the updated hash table information if this is the last peer
-    if peer_to_store == DHT_list[-1]:
-        print("Final hash table information:")
-        for peer in DHT_list:
-            event_count = len(peer.local_hash_table)
-            print(f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}")
+    #if peer_to_store == DHT_list[-1]:
+        #print("Final hash table information:")
+        #for peer in DHT_list:
+            #event_count = len(peer.local_hash_table)
+            #print(f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}")
 
 
 def send_row_to_peer(peer, row):
