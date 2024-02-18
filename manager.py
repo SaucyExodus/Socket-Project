@@ -2,6 +2,7 @@
 import socket
 import csv
 import sys
+import pickle
 import random
 from peer import Peer
 
@@ -126,6 +127,8 @@ def setup_dht(peername, n, year):
 
     # List of n peers that together will construct the DHT
     dht_peers = [(peer.peername, peer.ipv4addr, peer.pport) for peer in DHT_list]
+    serialized_data = pickle.dumps(dht_peers)
+    server_sock.sendto(serialized_data, client_address)
 
     # Load csv file depending on the inputted year
     rows = []
@@ -220,6 +223,8 @@ def command_execution(command_name):
         command_response = print_manager_status()
     elif command[0] == "print_DHT_list":
         command_response = print_DHT_list()
+    elif command[0] == "Hello":
+        command_response = "Hello I am the Manager Server!\n"
     else:
         command_response = "FAILURE! Couldn't find command: {}".format(command[0])
      
@@ -244,24 +249,20 @@ def print_DHT_list():
         
     return "SUCCESS! List was printed"
 
-# Main function
-def main():
-    # First argument for server port
-    server_port = int(sys.argv[1])
-    print("Server: Port server is listening to: ", server_port)
 
-    # Create socket
-    server_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+# First argument for server port
+server_port = int(sys.argv[1])
+print("Server: Port server is listening to: ", server_port)
 
-    # Bind socket to localhost with port argument
-    server_sock.bind(('', server_port))
+# Create socket
+server_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
-    # Infinite loop for receiving/sending messages 
-    while True:
-        data, client_address = server_sock.recvfrom(1024)
-        clinet_message = data.decode("utf-8")  # Decode the received data
-        response = command_execution(clinet_message)  # Execute the command
-        server_sock.sendto(response.encode("utf-8"), client_address)
+# Bind socket to localhost with port argument
+server_sock.bind(('', server_port))
 
-if __name__ == "__main__":
-    main()
+# Infinite loop for receiving/sending messages 
+while True:
+    data, client_address = server_sock.recvfrom(1024)
+    clinet_message = data.decode("utf-8")  # Decode the received data
+    response = command_execution(clinet_message)  # Execute the command
+    server_sock.sendto(response.encode("utf-8"), client_address)
