@@ -128,7 +128,7 @@ def command_execution(command_name):
     elif command[0] == "print_DHT_list":
         command_response = print_DHT_list()
     else:
-        command_response = "FAILURE! Couldn't find command."
+        command_response = "FAILURE! Couldn't find command: {}".format(command[0])
      
     return command_response
 
