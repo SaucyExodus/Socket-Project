@@ -221,13 +221,14 @@ def print_DHT_list():
 
 # First argument for server port
 server_port = int(sys.argv[1])
+server_ip = socket.gethostbyname(socket.gethostname())
 print("Server: Port server is listening to: ", server_port)
 
 # Create socket
 server_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
 # Bind socket to localhost with port argument
-server_sock.bind(('', server_port))
+server_sock.bind((server_ip, server_port))
 
 # Infinite loop for receiving/sending messages 
 while True:
