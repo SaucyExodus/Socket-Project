@@ -12,11 +12,13 @@ dht_set_up = False
 manager_state = "IDLE"
 
 class DHT:
-    def __init__(self, peername, ipv4addr, pport, status):
+    def __init__(self, peername, ipv4addr, pport, status, identifier, neighbor):
         self.peername = peername
         self.ipv4addr = ipv4addr
         self.pport = pport
         self.status = status
+        self.identifier = identifier
+        self.neighbor = neighbor
 
 # Register function
 def register(peer_name, ipv4addr, mport, pport):
@@ -36,7 +38,9 @@ def register(peer_name, ipv4addr, mport, pport):
 
     # Register new peer
     status = "Free"
-    peer_list.append(Peer(peer_name, ipv4addr, mport, pport, status))
+    identifier = -1
+    neighbor = None
+    peer_list.append(Peer(peer_name, ipv4addr, mport, pport, status, identifier, neighbor))
     return "SUCCESS! Peer registered successfully."
 
 def setup_dht(peername, n, year):
@@ -86,13 +90,27 @@ def setup_dht(peername, n, year):
         if peer.status == "Free":
            peer.status = "InDHT"
 
+    # Assign identifiers to selected peers
+    for i, peer in enumerate(peer_list):
+        if peer.status == "InDHT":
+            peer.set_identifier(i)
+        elif peer.status == "Leader":
+            peer.set_identifier(0)
+
+    # Assign neighbors
+    for i in range(len(peer_list)):
+        current_peer = peer_list[i]
+        next_index = (i + 1) % len(peer_list)
+        next_peer = peer_list[next_index]
+        current_peer.neighbor = next_peer
+
     # Create DHT objects for selected peers and add them to DHT_list
     for peer in peer_list:
         if peer.status == "InDHT":
-            dht_peer = DHT(peer.peername, peer.ipv4addr, peer.pport, peer.status)
+            dht_peer = DHT(peer.peername, peer.ipv4addr, peer.pport, peer.status, peer.identifier, peer.neighbor)
             DHT_list.append(dht_peer)
         elif peer.status == "Leader":
-            dht_peer = DHT(peer.peername, peer.ipv4addr, peer.pport, peer.status)
+            dht_peer = DHT(peer.peername, peer.ipv4addr, peer.pport, peer.status, peer.identifier, peer.neighbor)
             DHT_list.insert(0, dht_peer)
         
 
@@ -104,7 +122,7 @@ def setup_dht(peername, n, year):
 
     # Set dht_set_up to true and print list of peers
     dht_set_up = True
-    print("\n", dht_peers)
+    #print("\n", dht_peers)
     return "SUCCESS! DHT is set up."
 
 def dht_complete(peername):
@@ -167,8 +185,9 @@ def print_peer_list():
 # Print DHT List Function
 def print_DHT_list():
     for obj in DHT_list:
-        print("\nPeer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr,  
-              "\nPeer Port: ", obj.pport, "\n----------------------------")
+        neighbor_details = "None" if obj.neighbor is None else f"{obj.neighbor.peername}"
+        
+        print("\nPeer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nPeer Port: ", obj.pport, "\nIdentifier: ", obj.identifier, "\nNeighbor: ", neighbor_details , "\n----------------------------")
         
     return "SUCCESS! List was printed"
 

@@ -3,13 +3,20 @@ import socket
 import sys
 
 class Peer:
-    def __init__(self, peername, ipv4addr, mport, pport, status):
+    def __init__(self, peername, ipv4addr, mport, pport, status, identifier, neighbor):
         self.peername = peername
         self.ipv4addr = ipv4addr
         self.mport = mport
         self.pport = pport
         self.status = status
+        self.identifier = identifier
+        self.neighbor = neighbor
 
+    def set_identifier(self, identifier):
+        self.identifier = identifier
+
+    def set_right_neighbor(self, neighbor):
+        self.right_neighbor = neighbor
 
 # Main function
 def main():
