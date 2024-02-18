@@ -11,6 +11,7 @@ DHT_list = []
 dht_set_up = False
 manager_state = "IDLE"
 
+# DHT Class
 class DHT:
     def __init__(self, peername, ipv4addr, pport, status, identifier, neighbor):
         self.peername = peername
@@ -56,7 +57,7 @@ def setup_dht(peername, n, year):
         return "FAILURE! Peer name is not registered."
     
     # Check if n is less than 3
-    if n < 3:
+    if int(n) < 3:
         return "FAILURE! n must be at least three."
     
     # Check if less than n users are registered with manager
