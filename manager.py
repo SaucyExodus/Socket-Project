@@ -148,8 +148,8 @@ def dht_complete(peername):
     return "SUCCESS! DHT setup completed successfully."
 
 def print_manager_status():
-    
     global manager_state
+    
     print(manager_state)
     return "SUCCESS! Manager Status was printed" 
 

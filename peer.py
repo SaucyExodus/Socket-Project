@@ -27,16 +27,20 @@ def main():
     # Create Socket
     client_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
-    # Send a message to server
-    message = input("Input a message you want to send: ")
-    client_sock.sendto(message.encode(), (server_IP, server_port))
+    while True:
+        # Send a message to server
+        message = input("Input a command: ")
+        
+        # Close the clients socket
+        if message == "close":
+            client_sock.close()
+            break
 
-    # Recieve a message from server
-    sever_message, server_address = client_sock.recvfrom(1024)
-    print(sever_message)
+        client_sock.sendto(message.encode(), (server_IP, server_port))
 
-    # Close the clients socket
-    client_sock.close()
+        # Recieve a message from server
+        sever_message, server_address = client_sock.recvfrom(1024)
+        print(sever_message)
 
 if __name__ == "__main__":
     main()
