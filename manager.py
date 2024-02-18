@@ -219,9 +219,17 @@ def hash_table(row, n):
     else:
         # Forward the record to the appropriate peer in the ring
         send_row_to_peer(peer_to_store, row)
+    
+# Print the updated hash table information if this is the last peer
+    if peer_to_store == DHT_list[-1]:
+        print("Final hash table information:")
+        for peer in DHT_list:
+            event_count = len(peer.local_hash_table)
+            print(f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}")
+
 
 def send_row_to_peer(peer, row):
-    """Forward the record to the appropriate peer in the ring."""
+    "Forward the record to the appropriate peer in the ring."
     current_peer = peer
     next_peer = current_peer.neighbor
 
@@ -234,9 +242,9 @@ def send_row_to_peer(peer, row):
         next_peer = current_peer.neighbor
 
 def next_prime(n):
-    """Return the next prime number greater than or equal to n."""
+    "Return the next prime number greater than or equal to n."
     def is_prime(num):
-        """Check if num is prime."""
+        "Check if num is prime."
         if num < 2:
             return False
         for i in range(2, int(num ** 0.5) + 1):
