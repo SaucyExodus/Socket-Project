@@ -11,6 +11,7 @@ DHT_list = []
 dht_set_up = False
 manager_state = "IDLE"
 
+# DHT Class
 class DHT:
     def __init__(self, peername, ipv4addr, pport, status, identifier, neighbor):
         self.peername = peername
