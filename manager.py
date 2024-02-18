@@ -1,5 +1,6 @@
 # manager.py
 import socket
+import pandas as pd
 import sys
 import random
 from peer import Peer
@@ -125,6 +126,13 @@ def setup_dht(peername, n, year):
 
     # List of n peers that together will construct the DHT
     dht_peers = [(peer.peername, peer.ipv4addr, peer.pport) for peer in DHT_list]
+
+    if year == "1950":
+        df = pd.read_csv('./details-1950.csv')
+    elif year == "1951":
+        df = pd.read_csv('./details-1951.csv')
+    elif year == "1952":
+        df = pd.read_csv('./details-1952.csv')
 
     # Update manager status to WAITING_DHT_COMPLETE
     manager_state = "WAITING_DHT_COMPLETE"
