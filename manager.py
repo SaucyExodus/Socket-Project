@@ -1,6 +1,6 @@
 # manager.py
 import socket
-import pandas as pd
+import csv
 import sys
 import pickle
 import random
@@ -130,12 +130,43 @@ def setup_dht(peername, n, year):
     serialized_data = pickle.dumps(dht_peers)
     server_sock.sendto(serialized_data, client_address)
 
+    # Load csv file depending on the inputted year
+    rows = []
+    count = 0
+
     if year == "1950":
-        df = pd.read_csv('./details-1950.csv')
+        # Open the CSV file for 1950
+        with open("./details-1950.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                count += 1
+        print("\n", header)
+        print("\n", rows[0:5])
+        print("\n", count)
     elif year == "1951":
-        df = pd.read_csv('./details-1951.csv')
-    elif year == "1952":
-        df = pd.read_csv('./details-1952.csv')
+        # Open the CSV file for 1950
+        with open("./details-1951.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                count += 1
+        print("\n", header)
+        print("\n", rows[0:5])
+        print("\n", count)
+    elif year == "1951":
+        # Open the CSV file for 1950
+        with open("./details-1951.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                count += 1
+        print("\n", header)
+        print("\n", rows[0:5])
+        print("\n", count)
 
     # Update manager status to WAITING_DHT_COMPLETE
     manager_state = "WAITING_DHT_COMPLETE"
@@ -145,7 +176,7 @@ def setup_dht(peername, n, year):
     dht_peers_printed_list = ""
     for i in dht_peers:
         dht_peers_printed_list += f"\nPeer name: {i[0]} \nIPv4 Address: {i[1]} \nPeer Port: {i[2]} \n----------------------------"
-        
+    
     return "SUCCESS! DHT is set up." +  dht_peers_printed_list
 
 def dht_complete(peername):
