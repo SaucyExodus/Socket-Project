@@ -1,6 +1,10 @@
 # peer.py
 import socket
 import sys
+import pickle
+
+
+peers_tuple = []
 
 class Peer:
     def __init__(self, peername, ipv4addr, mport, pport, status, identifier, neighbor):
@@ -26,8 +30,21 @@ def main():
 
     # Create Socket
     client_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    client_sock.sendto(b"Hello", (server_IP, server_port))
 
     while True:
+        
+        # Recieve a message from server
+        data, server_address = client_sock.recvfrom(1024)
+
+        try:
+            peers_list = pickle.loads(data)
+            print("Received peers list:", peers_list)
+            continue
+        except pickle.UnpicklingError:
+            server_message = data.decode("utf-8")
+            print("Received server message:", server_message)
+        
         # Send a message to server
         message = input("Input a command: ")
         
@@ -37,11 +54,6 @@ def main():
             break
 
         client_sock.sendto(message.encode("utf-8"), (server_IP, server_port))
-
-        # Recieve a message from server
-        data, server_address = client_sock.recvfrom(1024)
-        server_message = data.decode("utf-8")
-        print(server_message)
 
 if __name__ == "__main__":
     main()
