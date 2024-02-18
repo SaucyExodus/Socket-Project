@@ -32,7 +32,7 @@ def register(peer_name, ipv4addr, mport, pport):
     # Check if register is unique
     for obj in peer_list:
         # Check if mport and pport are unique
-        if mport in obj.mport or pport in obj.pport:
+        if mport == obj.mport: #or str(client_address[1]) == obj.pport:
             return "FAILURE! Ports already in use."
         
         # Check if peername is already registered
@@ -43,7 +43,7 @@ def register(peer_name, ipv4addr, mport, pport):
     status = "Free"
     identifier = -1
     neighbor = None
-    peer_list.append(Peer(peer_name, ipv4addr, mport, pport, status, identifier, neighbor))
+    peer_list.append(Peer(peer_name, str(client_address[0]), mport, str(client_address[1]), status, identifier, neighbor))
     return "SUCCESS! Peer registered successfully."
 
 def setup_dht(peername, n, year):
@@ -128,7 +128,6 @@ def setup_dht(peername, n, year):
     # List of n peers that together will construct the DHT
     dht_peers = [(peer.peername, peer.ipv4addr, peer.pport) for peer in DHT_list]
     serialized_data = pickle.dumps(dht_peers)
-    server_sock.sendto(serialized_data, client_address)
 
     # Load csv file depending on the inputted year
     rows = []
@@ -175,9 +174,11 @@ def setup_dht(peername, n, year):
     dht_set_up = True
     dht_peers_printed_list = ""
     for i in dht_peers:
+        ring_connection = (str(i[1]), int(i[2]))
+        server_sock.sendto(serialized_data, ring_connection)
         dht_peers_printed_list += f"\nPeer name: {i[0]} \nIPv4 Address: {i[1]} \nPeer Port: {i[2]} \n----------------------------"
     
-    return "SUCCESS! DHT is set up." +  dht_peers_printed_list
+    return "SUCCESS! DHT is set up. \n------------DHT List------------" +  dht_peers_printed_list
 
 def dht_complete(peername):
     
@@ -224,7 +225,9 @@ def command_execution(command_name):
     elif command[0] == "print_DHT_list":
         command_response = print_DHT_list()
     elif command[0] == "Hello":
-        command_response = "Hello I am the Manager Server!\n"
+        command_response = "[You are now connected]\n"
+    elif command[0] == "port":
+        command_response = "Peers port is:" + str(client_address[1])
     else:
         command_response = "FAILURE! Couldn't find command: {}".format(command[0])
      
@@ -245,7 +248,8 @@ def print_DHT_list():
     for obj in DHT_list:
         neighbor_details = "None" if obj.neighbor is None else f"{obj.neighbor.peername}"
         
-        print("Peer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nPeer Port: ", obj.pport, "\nIdentifier: ", obj.identifier, "\nNeighbor: ", neighbor_details , "\n----------------------------")
+        print("Peer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nPeer Port: ", obj.pport, 
+              "\nIdentifier: ", obj.identifier, "\nNeighbor: ", neighbor_details , "\n----------------------------")
         
     return "SUCCESS! List was printed"
 
@@ -253,8 +257,7 @@ def print_DHT_list():
 # First argument for server port
 server_port = int(sys.argv[1])
 server_ip = socket.gethostbyname(socket.gethostname())
-print("Server: Port server is listening to: ", server_port)
-print("Server address: ", server_ip)
+print("[SERVER] Port server is listening to:", server_port, "\n")
 
 # Create socket
 server_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
