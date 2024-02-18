@@ -90,19 +90,27 @@ def setup_dht(peername, n, year):
         if peer.status == "Free":
            peer.status = "InDHT"
 
+    # Filter the list to include only leaders and peers with status "InDHT"
+    eligible_peers = [peer for peer in peer_list if peer.status == "Leader" or peer.status == "InDHT"]
+
     # Assign identifiers to selected peers
-    for i, peer in enumerate(peer_list):
+    for i, peer in enumerate(eligible_peers):
         if peer.status == "InDHT":
             peer.set_identifier(i)
         elif peer.status == "Leader":
             peer.set_identifier(0)
 
+    # Filter the list to include only leaders and peers with status "InDHT"
+    eligible_peers = [peer for peer in peer_list if peer.status == "Leader" or peer.status == "InDHT"]
+
     # Assign neighbors
-    for i in range(len(peer_list)):
-        current_peer = peer_list[i]
-        next_index = (i + 1) % len(peer_list)
-        next_peer = peer_list[next_index]
-        current_peer.neighbor = next_peer
+    for i, peer in enumerate(eligible_peers):
+        next_index = (i + 1) % len(eligible_peers)
+        peer.neighbor = eligible_peers[next_index]
+
+    # Assign the leader as the neighbor of the last peer to close the loop
+    last_peer = eligible_peers[-1]
+    last_peer.neighbor = eligible_peers[0]  # Assign the leader as the neighbor
 
     # Create DHT objects for selected peers and add them to DHT_list
     for peer in peer_list:
@@ -148,8 +156,8 @@ def dht_complete(peername):
     return "SUCCESS! DHT setup completed successfully."
 
 def print_manager_status():
-    global manager_state
     
+    global manager_state
     print(manager_state)
     return "SUCCESS! Manager Status was printed" 
 
@@ -212,4 +220,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
