@@ -12,6 +12,7 @@ DHT_list = []
 
 dht_set_up = False
 manager_state = "IDLE"
+numOfStormEvents = 0
 
 # DHT Class
 class DHT:
@@ -22,6 +23,7 @@ class DHT:
         self.status = status
         self.identifier = identifier
         self.neighbor = neighbor
+        self.local_hash_table = []
 
 # Register function
 def register(peer_name, ipv4addr, mport, pport):
@@ -132,7 +134,7 @@ def setup_dht(peername, n, year):
 
     # Load csv file depending on the inputted year
     rows = []
-    count = 0
+    global numOfStormEvents
 
     if year == "1950":
         # Open the CSV file for 1950
@@ -141,32 +143,29 @@ def setup_dht(peername, n, year):
             header = next(csvreader)
             for row in csvreader:
                 rows.append(row)
-                count += 1
-        print("\n", header)
-        print("\n", rows[0:5])
-        print("\n", count)
+                hash_table(row, n)
+                numOfStormEvents += 1
     elif year == "1951":
-        # Open the CSV file for 1950
+        # Open the CSV file for 1951
         with open("./details-1951.csv", 'r') as file:
             csvreader = csv.reader(file)
             header = next(csvreader)
             for row in csvreader:
                 rows.append(row)
-                count += 1
-        print("\n", header)
-        print("\n", rows[0:5])
-        print("\n", count)
+                hash_table(row, n)
+                numOfStormEvents += 1
     elif year == "1952":
-        # Open the CSV file for 1950
+        # Open the CSV file for 1952
         with open("./details-1952.csv", 'r') as file:
             csvreader = csv.reader(file)
             header = next(csvreader)
             for row in csvreader:
                 rows.append(row)
-                count += 1
-        print("\n", header)
-        print("\n", rows[0:5])
-        print("\n", count)
+                hash_table(row, n)
+                numOfStormEvents += 1
+        #print("\n", header)
+        #print("\n", rows[0:5])
+        #print("\n", numOfStormEvents)
 
     # Update manager status to WAITING_DHT_COMPLETE
     manager_state = "WAITING_DHT_COMPLETE"
@@ -177,7 +176,7 @@ def setup_dht(peername, n, year):
     for i in dht_peers:
         dht_peers_printed_list += f"\nPeer name: {i[0]} \nIPv4 Address: {i[1]} \nPeer Port: {i[2]} \n----------------------------"
     
-    return "SUCCESS! DHT is set up." +  dht_peers_printed_list
+    return f"SUCCESS! DHT is set up." + dht_peers_printed_list
 
 def dht_complete(peername):
     
@@ -200,6 +199,54 @@ def dht_complete(peername):
 
     # Respond with SUCCESS to the leader
     return "SUCCESS! DHT setup completed successfully."
+
+def hash_table(row, n):
+    global DHT_list, numOfStormEvents
+
+    s = next_prime(2 * numOfStormEvents)
+    event_id = int(row[0])
+    pos = event_id % s
+    id = pos % int(n)
+
+    #print(id)
+
+    # Get the peer with the computed identifier
+    peer_to_store = next(peer for peer in DHT_list if peer.identifier == id)
+
+    if peer_to_store.identifier == id:
+        peer_to_store.local_hash_table.append(row)
+    else:
+        # Forward the record to the appropriate peer in the ring
+        send_row_to_peer(peer_to_store, row)
+
+def send_row_to_peer(peer, row):
+    """Forward the record to the appropriate peer in the ring."""
+    current_peer = peer
+    next_peer = current_peer.neighbor
+
+    while next_peer.identifier != peer.identifier:
+        # Forward the record to the next peer in the ring
+        next_peer.local_hash_table.append(row)
+        
+        # Move to the next peer in the ring
+        current_peer = next_peer
+        next_peer = current_peer.neighbor
+
+def next_prime(n):
+    """Return the next prime number greater than or equal to n."""
+    def is_prime(num):
+        """Check if num is prime."""
+        if num < 2:
+            return False
+        for i in range(2, int(num ** 0.5) + 1):
+            if num % i == 0:
+                return False
+        return True
+    
+    while True:
+        if is_prime(n):
+            return n
+        n += 1
 
 def print_manager_status():
     
