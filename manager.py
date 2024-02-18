@@ -1,5 +1,6 @@
 # manager.py
 import socket
+import pandas as pd
 import sys
 import pickle
 import random
@@ -128,6 +129,13 @@ def setup_dht(peername, n, year):
     dht_peers = [(peer.peername, peer.ipv4addr, peer.pport) for peer in DHT_list]
     serialized_data = pickle.dumps(dht_peers)
     server_sock.sendto(serialized_data, client_address)
+
+    if year == "1950":
+        df = pd.read_csv('./details-1950.csv')
+    elif year == "1951":
+        df = pd.read_csv('./details-1951.csv')
+    elif year == "1952":
+        df = pd.read_csv('./details-1952.csv')
 
     # Update manager status to WAITING_DHT_COMPLETE
     manager_state = "WAITING_DHT_COMPLETE"
