@@ -65,11 +65,12 @@ def setup_dht(peername, n, year):
 
     # Select n-1 free users at random
     free_peers = [peer for peer in peer_list if peer.status == "Free"]
-    selected_peers = random.sample(free_peers, int(n) - 1)
+    selected_peers = random.sample(free_peers, min(len(free_peers), int(n) - 1))
 
     # Set selected peers status to InDHT
     for peer in selected_peers:
-        peer.status = "InDHT"
+        if peer.status == "Free":
+           peer.status = "InDHT"
 
     # Set leader's status to Leader for peer list
     leader_peer = next((peer for peer in peer_list if peer.peername == peername), None)
@@ -93,8 +94,7 @@ def setup_dht(peername, n, year):
         elif peer.status == "Leader":
             dht_peer = DHT(peer.peername, peer.ipv4addr, peer.pport, peer.status)
             DHT_list.insert(0, dht_peer)
-        else:
-            return
+        
 
     # List of n peers that together will construct the DHT
     dht_peers = [(peer.peername, peer.ipv4addr, peer.pport) for peer in peer_list]
