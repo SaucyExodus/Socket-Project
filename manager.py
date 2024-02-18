@@ -130,8 +130,11 @@ def setup_dht(peername, n, year):
 
     # Set dht_set_up to true and print list of peers
     dht_set_up = True
-    #print("\n", dht_peers)
-    return "SUCCESS! DHT is set up."
+    for obj in dht_peers:
+        dht_peers_printed_list = print("\nPeer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, 
+                                       "\nPeer Port: ", obj.pport, "\n----------------------------")
+        
+    return "SUCCESS! DHT is set up.", dht_peers_printed_list
 
 def dht_complete(peername):
     
