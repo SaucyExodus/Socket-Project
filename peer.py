@@ -36,11 +36,12 @@ def main():
             client_sock.close()
             break
 
-        client_sock.sendto(message.encode(), (server_IP, server_port))
+        client_sock.sendto(message.encode("utf-8"), (server_IP, server_port))
 
         # Recieve a message from server
-        sever_message, server_address = client_sock.recvfrom(1024)
-        print(sever_message)
+        data, server_address = client_sock.recvfrom(1024)
+        server_message = data.decode("utf-8")
+        print(server_message)
 
 if __name__ == "__main__":
     main()

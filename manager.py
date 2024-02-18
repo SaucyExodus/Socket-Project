@@ -124,18 +124,18 @@ def setup_dht(peername, n, year):
         
 
     # List of n peers that together will construct the DHT
-    dht_peers = [(peer.peername, peer.ipv4addr, peer.pport) for peer in peer_list]
+    dht_peers = [(peer.peername, peer.ipv4addr, peer.pport) for peer in DHT_list]
 
     # Update manager status to WAITING_DHT_COMPLETE
     manager_state = "WAITING_DHT_COMPLETE"
 
     # Set dht_set_up to true and print list of peers
     dht_set_up = True
-    for obj in dht_peers:
-        dht_peers_printed_list = print("\nPeer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, 
-                                       "\nPeer Port: ", obj.pport, "\n----------------------------")
+    dht_peers_printed_list = ""
+    for i in dht_peers:
+        dht_peers_printed_list += f"\nPeer name: {i[0]} \nIPv4 Address: {i[1]} \nPeer Port: {i[2]} \n----------------------------"
         
-    return "SUCCESS! DHT is set up.", dht_peers_printed_list
+    return "SUCCESS! DHT is set up." +  dht_peers_printed_list
 
 def dht_complete(peername):
     
@@ -188,18 +188,20 @@ def command_execution(command_name):
 
 # Print Peer List Function
 def print_peer_list():
+    print("---------Peer List-----------")
     for obj in peer_list:
-        print("\nPeer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nManager Port: ", obj.mport, 
+        print("Peer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nManager Port: ", obj.mport, 
               "\nPeer Port: ", obj.pport, "\nStatus: ", obj.status, "\n----------------------------")
         
     return "SUCCESS! List was printed"
 
 # Print DHT List Function
 def print_DHT_list():
+    print("---------DHT List-----------")
     for obj in DHT_list:
         neighbor_details = "None" if obj.neighbor is None else f"{obj.neighbor.peername}"
         
-        print("\nPeer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nPeer Port: ", obj.pport, "\nIdentifier: ", obj.identifier, "\nNeighbor: ", neighbor_details , "\n----------------------------")
+        print("Peer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nPeer Port: ", obj.pport, "\nIdentifier: ", obj.identifier, "\nNeighbor: ", neighbor_details , "\n----------------------------")
         
     return "SUCCESS! List was printed"
 
@@ -218,9 +220,9 @@ def main():
     # Infinite loop for receiving/sending messages 
     while True:
         data, client_address = server_sock.recvfrom(1024)
-        message = data.decode()  # Decode the received data
-        response = command_execution(message)  # Execute the command
-        server_sock.sendto(response.encode(), client_address)
+        clinet_message = data.decode("utf-8")  # Decode the received data
+        response = command_execution(clinet_message)  # Execute the command
+        server_sock.sendto(response.encode("utf-8"), client_address)
 
 if __name__ == "__main__":
     main()
