@@ -57,7 +57,7 @@ def setup_dht(peername, n, year):
         return "FAILURE! Peer name is not registered."
     
     # Check if n is less than 3
-    if n < 3:
+    if int(n) < 3:
         return "FAILURE! n must be at least three."
     
     # Check if less than n users are registered with manager
