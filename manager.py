@@ -163,17 +163,6 @@ def setup_dht(peername, n, year):
                 hash_table(row, n)
                 numOfStormEvents += 1
 
-    print("Final hash table information:")
-    for peer in DHT_list:
-        event_count = len(peer.local_hash_table)
-        print(f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}")
-        #print("\n", header)
-        #print("\n", rows[0:5])
-        #print("\n", numOfStormEvents)
-
-    # Update manager status to WAITING_DHT_COMPLETE
-    manager_state = "WAITING_DHT_COMPLETE"
-
     # Set dht_set_up to true and print list of peers
     dht_set_up = True
     dht_peers_printed_list = ""
@@ -181,6 +170,14 @@ def setup_dht(peername, n, year):
         ring_connection = (str(i[1]), int(i[2]))
         server_sock.sendto(serialized_data, ring_connection)
         dht_peers_printed_list += f"\nPeer name: {i[0]} \nIPv4 Address: {i[1]} \nPeer Port: {i[2]} \n----------------------------"
+
+    for peer in DHT_list:
+        event_count = len(peer.local_hash_table)
+        response_record = f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}"
+        server_sock.sendto(response_record.encode("utf-8"), (str(peer.ipv4addr), int(peer.pport)))
+
+    # Update manager status to WAITING_DHT_COMPLETE
+    manager_state = "WAITING_DHT_COMPLETE"
     
     return "SUCCESS! DHT is set up. \n------------DHT List------------" +  dht_peers_printed_list
 
@@ -224,14 +221,6 @@ def hash_table(row, n):
     else:
         # Forward the record to the appropriate peer in the ring
         send_row_to_peer(peer_to_store, row)
-    
-# Print the updated hash table information if this is the last peer
-    #if peer_to_store == DHT_list[-1]:
-        #print("Final hash table information:")
-        #for peer in DHT_list:
-            #event_count = len(peer.local_hash_table)
-            #print(f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}")
-
 
 def send_row_to_peer(peer, row):
     "Forward the record to the appropriate peer in the ring."
