@@ -13,6 +13,7 @@ DHT_list = []
 dht_set_up = False
 manager_state = "IDLE"
 numOfStormEvents = 0
+storedPeer = ""
 
 # DHT Class
 class DHT:
@@ -203,6 +204,66 @@ def dht_complete(peername):
     # Respond with SUCCESS to the leader
     return "SUCCESS! DHT setup completed successfully."
 
+def leave_dht(peername):
+
+    global storedPeer, manager_state
+
+    # Check if DHT is created
+    if not DHT_list:
+        return "FAILURE! DHT does not exist."
+    
+    # Return Failure to any other incoming messages until dht_rebuild
+    if manager_state != "DHT Complete":
+        return "FAILURE! Manager is not available to process leave-dht request."
+
+    # Find the peer in the DHT_list
+    peer_to_leave = None
+    for peer in DHT_list:
+        if peer.peername == peername:
+            peer_to_leave = peer
+            break
+    
+    # Check if peer is in the existing DHT
+    if peer_to_leave is None:
+        return "FAILURE! Given peer is not maintaining the DHT"
+
+    storedPeer = peername
+    #print(storedPeer)
+
+    manager_state = "Awaiting dht-rebuilt"
+
+    return "SUCCESS! Awaiting dht-rebuilt"
+
+def join_dht(peername):
+
+    global storedPeer, manager_state
+
+    # Check if DHT is created
+    if not DHT_list:
+        return "FAILURE! DHT does not exist."
+
+    # Return Failure to any other incoming messages until dht_rebuild
+    if manager_state != "DHT Complete":
+        return "FAILURE! Manager is not available to process join-dht request."
+
+    # Find the peer in the peer_list
+    peer_to_leave = None
+    for peer in peer_list:
+        if peer.peername == peername:
+            peer_to_leave = peer
+            break
+
+    # Check if given peer is free
+    if peer_to_leave.status != "Free":
+        return "FAILURE! Peer is not free."
+
+    storedPeer = peername
+    #print(storedPeer)
+
+    manager_state = "Awaiting dht-rebuilt"
+
+    return "SUCCESS! Awaiting dht-rebuilt"
+
 def hash_table(row, n):
     global DHT_list, numOfStormEvents
 
@@ -223,7 +284,7 @@ def hash_table(row, n):
         send_row_to_peer(peer_to_store, row)
 
 def send_row_to_peer(peer, row):
-    "Forward the record to the appropriate peer in the ring."
+    # Forward the record to the appropriate peer in the ring.
     current_peer = peer
     next_peer = current_peer.neighbor
 
@@ -236,7 +297,7 @@ def send_row_to_peer(peer, row):
         next_peer = current_peer.neighbor
 
 def next_prime(n):
-    "Return the next prime number greater than or equal to n."
+    # Return the next prime number greater than or equal to n.
     def is_prime(num):
         "Check if num is prime."
         if num < 2:
@@ -269,6 +330,10 @@ def command_execution(command_name):
         command_response = setup_dht(command[1], command[2], command[3])
     elif command[0] == "dht_complete":
         command_response = dht_complete(command[1])
+    elif command[0] == "leave_dht":
+        command_response = leave_dht(command[1])
+    elif command[0] == "join_dht":
+        command_response = join_dht(command[1])
     elif command[0] == "print_manager_status":
         command_response = print_manager_status()
     elif command[0] == "print_DHT_list":
@@ -277,6 +342,8 @@ def command_execution(command_name):
         command_response = "[You are now connected]\n"
     elif command[0] == "port":
         command_response = "Peers port is: " + str(client_address[1])
+    elif command[0] == "quit":
+        quit()
     else:
         command_response = "FAILURE! Couldn't find command: {}".format(command[0])
      
@@ -284,7 +351,7 @@ def command_execution(command_name):
 
 # Print Peer List Function
 def print_peer_list():
-    print("---------Peer List-----------")
+    print("\n---------Peer List-----------")
     for obj in peer_list:
         print("Peer name: ", obj.peername, "\nIPv4 Address: ", obj.ipv4addr, "\nManager Port: ", obj.mport, 
               "\nPeer Port: ", obj.pport, "\nStatus: ", obj.status, "\n----------------------------")
@@ -293,7 +360,7 @@ def print_peer_list():
 
 # Print DHT List Function
 def print_DHT_list():
-    print("---------DHT List-----------")
+    print("\n---------DHT List-----------")
     for obj in DHT_list:
         neighbor_details = "None" if obj.neighbor is None else f"{obj.neighbor.peername}"
         
@@ -301,7 +368,6 @@ def print_DHT_list():
               "\nIdentifier: ", obj.identifier, "\nNeighbor: ", neighbor_details , "\n----------------------------")
         
     return "SUCCESS! List was printed"
-
 
 # First argument for server port
 server_port = int(sys.argv[1])
