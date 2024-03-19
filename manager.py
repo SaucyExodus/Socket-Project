@@ -252,7 +252,8 @@ def leave_dht(peername):
             break
 
     # 1.2.3 Setp 1: Initiate teardown of DHT by deleting own local hash table
-    peer_to_leave.local_hash_table = []
+    for peer in DHT_list:
+        peer.local_hash_table = []
 
     # 1.2.3 Step 2: Assign neighbors
     for i, peer_obj in enumerate(DHT_list):
@@ -263,6 +264,7 @@ def leave_dht(peername):
     for i in range(len(DHT_list)):
         DHT_list[i].identifier = i
 
+    # 1.2.3 Step 3: construct the local DHT in new ring size of n-1
     num = int(num) - 1
     num_str = str(num)
 
