@@ -16,6 +16,7 @@ numOfStormEvents = 0
 storedPeer = ""
 Year = ""
 num = ""
+teardownPeer = ""
 
 # DHT Class
 class DHT:
@@ -179,6 +180,10 @@ def dht_complete(peername):
 
     # Respond with SUCCESS to the leader
     return "SUCCESS! DHT setup completed successfully."
+
+def query_dht(peername):
+
+    return
 
 def leave_dht(peername):
 
@@ -405,9 +410,60 @@ def deregister(peername):
     for peer in peer_list:
         if peer.peername == peername:
             peer_list.remove(peer)
-            break
+            break      
 
     return "SUCCESS! Peer has been deregistered."
+
+def teardown_dht(peername):
+
+    global peer_list, DHT_list, manager_state, teardownPeer
+
+    # Check if the peer name is registered
+    if not any(peer.peername == peername for peer in peer_list):
+        return "FAILURE! Peer name is not registered."
+
+    # Check if the peer is the leader of the DHT
+    for peer in peer_list:
+        if peer.peername == peername and peer.status != "Leader":
+            return "FAILURE! Peer is not the leader of the DHT"
+
+    teardownPeer = peername
+
+    # Set peers in DHT status beck to free
+    for peer in peer_list:
+        if peer.status == "Leader" or peer.status == "InDHT":
+            peer.status = "Free"
+
+    # Initiate teardown of DHT by deleting own local hash table
+    DHT_list.clear()
+
+    manager_state = "Awaiting Teardown Completion"
+
+    return "SUCCESS! Teardown DHT has been started. Awaiting Teardown complete."
+
+def teardown_complete(peername):
+
+    global peer_list, DHT_list, manager_state, teardownPeer, dht_set_up
+
+    # Check if the peer name is registered
+    if not any(peer.peername == peername for peer in peer_list):
+        return "FAILURE! Peer name is not registered."
+
+    # Check if the peer is the leader of the DHT
+    if peername != teardownPeer:
+        return "FAILURE! Peer is not the leader of the DHT"
+
+    # Return Failure to any other incoming messages until teardown_complete
+    if manager_state != "Awaiting Teardown Completion":
+        return "FAILURE! Manager is not awaiting teardown completion"
+
+    if len(DHT_list) > 0:
+        return "FAILURE! DHT is not empty"
+
+    manager_state = "IDLE"
+    dht_set_up = False
+
+    return "SUCCESS! Teardown DHT has completed"
 
 def hash_table(row, n):
     global DHT_list, numOfStormEvents
@@ -484,6 +540,10 @@ def command_execution(command_name):
         command_response = join_dht(command[1])
     elif command[0] == "deregister":
         command_response = deregister(command[1])
+    elif command[0] == "teardown_dht":
+        command_response = teardown_dht(command[1])
+    elif command[0] == "teardown_complete":
+        command_response = teardown_complete(command[1])
     elif command[0] == "print_manager_status":
         command_response = print_manager_status()
     elif command[0] == "print_DHT_list":
@@ -492,8 +552,6 @@ def command_execution(command_name):
         command_response = "[You are now connected]\n"
     elif command[0] == "port":
         command_response = "Peers port is: " + str(client_address[1])
-    elif command[0] == "help":
-        command_response = "-------- List of Commands --------" + "\n register"
     elif command[0] == "quit":
         quit()
     else:
@@ -527,6 +585,42 @@ def read_file(year, n):
     elif year == "1952":
         # Open the CSV file for 1952
         with open("./details-1952.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                hash_table(row, n)
+                numOfStormEvents += 1
+    elif year == "1990":
+        # Open the CSV file for 1990
+        with open("./details-1990.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                hash_table(row, n)
+                numOfStormEvents += 1
+    elif year == "1991":
+        # Open the CSV file for 1991
+        with open("./details-1991.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                hash_table(row, n)
+                numOfStormEvents += 1
+    elif year == "1992":
+        # Open the CSV file for 1992
+        with open("./details-1992.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                hash_table(row, n)
+                numOfStormEvents += 1
+    elif year == "1996":
+        # Open the CSV file for 1996
+        with open("./details-1996.csv", 'r') as file:
             csvreader = csv.reader(file)
             header = next(csvreader)
             for row in csvreader:
