@@ -14,6 +14,8 @@ dht_set_up = False
 manager_state = "IDLE"
 numOfStormEvents = 0
 storedPeer = ""
+Year = ""
+num = ""
 
 # DHT Class
 class DHT:
@@ -51,7 +53,10 @@ def register(peer_name, ipv4addr, mport, pport):
 
 def setup_dht(peername, n, year):
 
-    global dht_set_up, manager_state
+    global dht_set_up, manager_state, Year, num
+
+    Year = year
+    num = n
 
     # Check if the manager is in an idle state
     if manager_state != "IDLE":
@@ -133,36 +138,7 @@ def setup_dht(peername, n, year):
     serialized_data = pickle.dumps(dht_peers)
 
     # Load csv file depending on the inputted year
-    rows = []
-    global numOfStormEvents
-
-    if year == "1950":
-        # Open the CSV file for 1950
-        with open("./details-1950.csv", 'r') as file:
-            csvreader = csv.reader(file)
-            header = next(csvreader)
-            for row in csvreader:
-                rows.append(row)
-                hash_table(row, n)
-                numOfStormEvents += 1
-    elif year == "1951":
-        # Open the CSV file for 1951
-        with open("./details-1951.csv", 'r') as file:
-            csvreader = csv.reader(file)
-            header = next(csvreader)
-            for row in csvreader:
-                rows.append(row)
-                hash_table(row, n)
-                numOfStormEvents += 1
-    elif year == "1952":
-        # Open the CSV file for 1952
-        with open("./details-1952.csv", 'r') as file:
-            csvreader = csv.reader(file)
-            header = next(csvreader)
-            for row in csvreader:
-                rows.append(row)
-                hash_table(row, n)
-                numOfStormEvents += 1
+    read_file(year, n)
 
     # Set dht_set_up to true and print list of peers
     dht_set_up = True
@@ -206,7 +182,7 @@ def dht_complete(peername):
 
 def leave_dht(peername):
 
-    global storedPeer, manager_state
+    global storedPeer, manager_state, Year, num
 
     # Check if DHT is created
     if not DHT_list:
@@ -227,12 +203,83 @@ def leave_dht(peername):
     if peer_to_leave is None:
         return "FAILURE! Given peer is not maintaining the DHT"
 
+    # Delete selected peer from DHT List
+    DHT_list.remove(peer_to_leave)
+    
+    # Update the peer's status to "Free" in the peer list
+    for peer in peer_list:
+        if peer.peername == peername:
+            peer.status = "Free"
+            break
+
+    # Assign the leader as the neighbor of the last peer to close the loop
+    last_peer = DHT_list[-1]
+    last_peer.neighbor = DHT_list[0]  # Assign the leader as the neighbor
+
+    # Set leader to inDHT for the peer list
+    for peer in peer_list:
+        if peer.status == "Leader":
+            peer.status = "InDHT"
+            break
+    
+    # Set leader to inDHT for the DHT list
+    for peer in DHT_list:
+        if peer.status == "Leader":
+            peer.status = "InDHT"
+            break
+
+    # 1.2.3 Step 2: Assign new leader
+    newLeader = peer_to_leave.neighbor
+
+    # Set Leader status to neighbor in DHT list
+    for peer in DHT_list:
+        if peer.peername == newLeader.peername:
+            peer.status = "Leader"
+            break
+    
+    # Set Leader status to neighbor in peer list
+    for peer in peer_list:
+        if peer.peername == newLeader.peername:
+            peer.status = "Leader"
+            break
+
+    # Find the leader in the DHT_list and move it to the front
+    for i, peer in enumerate(DHT_list):
+        #print("Checking peer:", peer.peername, "with status:", peer.status)
+        if peer.status == "Leader":
+            leader = DHT_list.pop(i)
+            DHT_list.insert(0, leader)
+            break
+
+    # 1.2.3 Setp 1: Initiate teardown of DHT by deleting own local hash table
+    peer_to_leave.local_hash_table = []
+
+    # 1.2.3 Step 2: Assign neighbors
+    for i, peer_obj in enumerate(DHT_list):
+        next_index = (i + 1) % len(DHT_list)
+        peer_obj.neighbor = DHT_list[next_index]
+
+    # 1.2.3 Step 2: Assign new IDs
+    for i in range(len(DHT_list)):
+        DHT_list[i].identifier = i
+
+    num = int(num) - 1
+    num_str = str(num)
+
+    global numOfStormEvents
+    numOfStormEvents = 0  
+    read_file(Year, num_str)
+
+    for peer in DHT_list:
+        event_count = len(peer.local_hash_table)
+        response_record = f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}"
+        server_sock.sendto(response_record.encode("utf-8"), (str(peer.ipv4addr), int(peer.pport)))
+
     storedPeer = peername
-    #print(storedPeer)
 
     manager_state = "Awaiting dht-rebuilt"
 
-    return "SUCCESS! Awaiting dht-rebuilt"
+    return "SUCCESS! Peer has left DHT. Awaiting dht-rebuilt"
 
 def join_dht(peername):
 
@@ -274,8 +321,11 @@ def hash_table(row, n):
 
     #print(id)
 
+    try:
     # Get the peer with the computed identifier
-    peer_to_store = next(peer for peer in DHT_list if peer.identifier == id)
+        peer_to_store = next(peer for peer in DHT_list if peer.identifier == id)
+    except StopIteration:
+        return
 
     if peer_to_store.identifier == id:
         peer_to_store.local_hash_table.append(row)
@@ -348,6 +398,41 @@ def command_execution(command_name):
         command_response = "FAILURE! Couldn't find command: {}".format(command[0])
      
     return command_response
+
+def read_file(year, n):
+
+    rows = []
+    global numOfStormEvents
+
+    if year == "1950":
+        # Open the CSV file for 1950
+        with open("./details-1950.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                hash_table(row, n)
+                numOfStormEvents += 1
+    elif year == "1951":
+        # Open the CSV file for 1951
+        with open("./details-1951.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                hash_table(row, n)
+                numOfStormEvents += 1
+    elif year == "1952":
+        # Open the CSV file for 1952
+        with open("./details-1952.csv", 'r') as file:
+            csvreader = csv.reader(file)
+            header = next(csvreader)
+            for row in csvreader:
+                rows.append(row)
+                hash_table(row, n)
+                numOfStormEvents += 1
+    else:
+        return "Year not found in directory"
 
 # Print Peer List Function
 def print_peer_list():
