@@ -182,7 +182,7 @@ def dht_complete(peername):
 
 def leave_dht(peername):
 
-    global storedPeer, manager_state, Year, num
+    global storedPeer, manager_state, Year, num, DHT_list, peer_list
 
     # Check if DHT is created
     if not DHT_list:
@@ -191,6 +191,10 @@ def leave_dht(peername):
     # Return Failure to any other incoming messages until dht_rebuild
     if manager_state != "DHT Complete":
         return "FAILURE! Manager is not available to process leave-dht request."
+    
+    # Check if peername is not in the peer_list
+    if peername not in [peer.peername for peer in peer_list]:
+        return "FAILURE! Provided peer has not been registered"
 
     # Find the peer in the DHT_list
     peer_to_leave = None
@@ -279,13 +283,18 @@ def leave_dht(peername):
 
     storedPeer = peername
 
-    manager_state = "Awaiting dht-rebuilt"
+    manager_state = "Awaiting dht-rebuilt - leave_dht"
+    
+    response_record = "SUCCESS! Awaiting dht-rebuilt."
+    server_sock.sendto(response_record.encode("utf-8"), client_address)
 
-    return "SUCCESS! Peer has left DHT. Awaiting dht-rebuilt"
+    dht_rebuilt(peername, newLeader)
+
+    return "SUCCESS! DHT rebuild completed successfully."
 
 def join_dht(peername):
 
-    global storedPeer, manager_state
+    global storedPeer, manager_state, Year, num, DHT_list, peer_list
 
     # Check if DHT is created
     if not DHT_list:
@@ -295,23 +304,110 @@ def join_dht(peername):
     if manager_state != "DHT Complete":
         return "FAILURE! Manager is not available to process join-dht request."
 
+    # Check if peername is not in the peer_list
+    if peername not in [peer.peername for peer in peer_list]:
+        return "FAILURE! Provided peer has not been registered"
+
     # Find the peer in the peer_list
-    peer_to_leave = None
+    peer_to_add = None
     for peer in peer_list:
         if peer.peername == peername:
-            peer_to_leave = peer
+            peer_to_add = peer
             break
 
     # Check if given peer is free
-    if peer_to_leave.status != "Free":
+    if peer_to_add.status != "Free":
         return "FAILURE! Peer is not free."
 
+    DHT_list.append(peer_to_add)    
+
+    # Set new peer to inDHT for the peer list
+    for peer in peer_list:
+        if peer.peername == peer_to_add.peername:
+            peer.status = "InDHT"
+            break
+    
+    # Set new peer to inDHT for the DHT list
+    for peer in DHT_list:
+        if peer.peername == peer_to_add.peername:
+            peer.status = "InDHT"
+            break
+
+    # Assign the leader as the neighbor of the last peer to close the loop
+    last_peer = DHT_list[-1]
+    last_peer.neighbor = DHT_list[0]  # Assign the leader as the neighbor
+
+    # Setp 1: Initiate teardown of DHT by deleting own local hash table
+    for peer in DHT_list:
+        peer.local_hash_table = []
+
+    # Step 2: Assign neighbors
+    for i, peer_obj in enumerate(DHT_list):
+        next_index = (i + 1) % len(DHT_list)
+        peer_obj.neighbor = DHT_list[next_index]
+
+    # Step 2: Assign new IDs
+    for i in range(len(DHT_list)):
+        DHT_list[i].identifier = i
+
+    # Step 3: construct the local DHT in new ring size of n-1
+    num = int(num) + 1
+    num_str = str(num)
+
+    global numOfStormEvents
+    numOfStormEvents = 0  
+    read_file(Year, num_str)
+
+    for peer in DHT_list:
+        event_count = len(peer.local_hash_table)
+        response_record = f"Peer {peer.peername}: ID = {peer.identifier}, Number of sorted records = {event_count}"
+        server_sock.sendto(response_record.encode("utf-8"), (str(peer.ipv4addr), int(peer.pport)))
+
+    for peer in peer_list:
+        if peer.status == "Leader":
+            newLeader = peer
+
     storedPeer = peername
-    #print(storedPeer)
 
-    manager_state = "Awaiting dht-rebuilt"
+    manager_state = "Awaiting dht-rebuilt - join_dht"
 
-    return "SUCCESS! Awaiting dht-rebuilt"
+    response_record = "SUCCESS! Awaiting dht-rebuilt."
+    server_sock.sendto(response_record.encode("utf-8"), client_address)
+
+    dht_rebuilt(peername, newLeader)
+
+    return "SUCCESS! DHT rebuild completed successfully."
+
+def dht_rebuilt(peername, new_leader):
+
+    global storedPeer, manager_state
+
+    if peername != storedPeer:
+        return "FAILURE! Peer did not initiate dht_rebuild."
+
+    manager_state = "DHT Complete"
+    
+    return 
+
+def deregister(peername):
+
+    global peer_list, DHT_list
+
+    # Check if peername is not in the peer_list
+    if peername not in [peer.peername for peer in peer_list]:
+        return "FAILURE! Provided peer is not in peer list"
+    
+    # Check if the peer is in the DHT_list
+    if any(peer.peername == peername for peer in DHT_list):
+        return "FAILURE! Provided peer is in DHT list, please leave DHT first"
+    
+    # Remove the peer from the peer_list
+    for peer in peer_list:
+        if peer.peername == peername:
+            peer_list.remove(peer)
+            break
+
+    return "SUCCESS! Peer has been deregistered."
 
 def hash_table(row, n):
     global DHT_list, numOfStormEvents
@@ -386,6 +482,8 @@ def command_execution(command_name):
         command_response = leave_dht(command[1])
     elif command[0] == "join_dht":
         command_response = join_dht(command[1])
+    elif command[0] == "deregister":
+        command_response = deregister(command[1])
     elif command[0] == "print_manager_status":
         command_response = print_manager_status()
     elif command[0] == "print_DHT_list":
@@ -394,6 +492,8 @@ def command_execution(command_name):
         command_response = "[You are now connected]\n"
     elif command[0] == "port":
         command_response = "Peers port is: " + str(client_address[1])
+    elif command[0] == "help":
+        command_response = "-------- List of Commands --------" + "\n register"
     elif command[0] == "quit":
         quit()
     else:
