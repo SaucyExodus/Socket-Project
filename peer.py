@@ -27,7 +27,7 @@ def receive_messages(client_sock):
         try:
             data, _ = client_sock.recvfrom(1024)
             peers_list = pickle.loads(data)
-            print("Establishing ring connection:",  peers_list, "\n")
+            print("3-tuple Data:",  peers_list, "\n")
             # Process peers_list as needed
         except pickle.UnpicklingError:
             server_message = data.decode("utf-8")

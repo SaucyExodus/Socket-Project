@@ -9,6 +9,7 @@ from peer import Peer
 # Globle data structure
 peer_list = []
 DHT_list = []
+Storm_list = []
 
 dht_set_up = False
 manager_state = "IDLE"
@@ -28,6 +29,21 @@ class DHT:
         self.identifier = identifier
         self.neighbor = neighbor
         self.local_hash_table = []
+
+class Storm:
+    def __init__(self, state, year, month_name, event_type, cz_type, cz_name, injuries_direct, injuries_indirect, deaths_direct, deaths_indirect, damage_property, damage_crops):
+        self.state = state
+        self.year = year
+        self.month_name = month_name
+        self.event_type = event_type
+        self.cz_type = cz_type
+        self.cz_name = cz_name
+        self.injuries_direct = injuries_direct
+        self.injuries_indirect = injuries_indirect
+        self.deaths_direct = deaths_direct
+        self.deaths_indirect = deaths_indirect
+        self.damage_property = damage_property
+        self.damage_crops = damage_crops
 
 # Register function
 def register(peer_name, ipv4addr, mport, pport):
@@ -183,7 +199,30 @@ def dht_complete(peername):
 
 def query_dht(peername):
 
-    return
+    for peer in DHT_list:
+        if peer.peername == peername:
+            query_tuple = (peer.peername, peer.ipv4addr, peer.pport)
+            query_tuple = pickle.dumps(query_tuple)
+            server_sock.sendto(query_tuple, client_address)
+            return "Peer found, waiting for 'find_event'"
+    
+    return "Couldn't find peer in DHT list."
+
+def find_event(event_id):
+    Storm_list.append(Storm("Alabama", "1996", "January", "Winter Storm", "Z", "Shelby", "0", "0", "0", "0", "10K", "1K"))
+    Storm_list.append(Storm("Arizona", "1996", "January", "Dust Storm", "Z", "Northern Greenlee", "17", "0", "0", "0", "0", "0"))
+    Storm_list.append(Storm("California", "1996", "October", "Wildfire", "C", "Monterey", "0", "0", "0", "0", "12.3M", "0T"))
+
+    if event_id == "5536849":
+        storm_response = f"Event ID: 5536849" + "\nState: " + Storm_list[0].state + "\nYear: " + Storm_list[0].year + "\nMonth " + Storm_list[0].month_name + "\nEvent Type: " + Storm_list[0].event_type + "\nCZ Type: " + Storm_list[0].cz_type + "\nCZ Name: " + Storm_list[0].cz_name + "\nInjuries Direct: " + Storm_list[0].injuries_direct + "\nInjuries Indirect: " + Storm_list[0].injuries_indirect + "\nDeaths Direct: " + Storm_list[0].deaths_direct + "\nDeaths Indirect: " + Storm_list[0].deaths_indirect + "\nDamage Property: " + Storm_list[0].damage_property + "\nDamage Crops: " + Storm_list[0].damage_crops
+    elif event_id == "5539287":
+        storm_response = f"Event ID: 5539287" + "\nState: " + Storm_list[1].state + "\nYear: " + Storm_list[1].year + "\nMonth " + Storm_list[1].month_name + "\nEvent Type: " + Storm_list[1].event_type + "\nCZ Type: " + Storm_list[1].cz_type + "\nCZ Name: " + Storm_list[1].cz_name + "\nInjuries Direct: " + Storm_list[1].injuries_direct + "\nInjuries Indirect: " + Storm_list[1].injuries_indirect + "\nDeaths Direct: " + Storm_list[1].deaths_direct + "\nDeaths Indirect: " + Storm_list[1].deaths_indirect + "\nDamage Property: " + Storm_list[1].damage_property + "\nDamage Crops: " + Storm_list[1].damage_crops
+    elif event_id == "5578493":
+        storm_response = f"Event ID: 5578493" + "\nState: " + Storm_list[2].state + "\nYear: " + Storm_list[2].year + "\nMonth " + Storm_list[2].month_name + "\nEvent Type: " + Storm_list[2].event_type + "\nCZ Type: " + Storm_list[2].cz_type + "\nCZ Name: " + Storm_list[2].cz_name + "\nInjuries Direct: " + Storm_list[2].injuries_direct + "\nInjuries Indirect: " + Storm_list[2].injuries_indirect + "\nDeaths Direct: " + Storm_list[2].deaths_direct + "\nDeaths Indirect: " + Storm_list[2].deaths_indirect + "\nDamage Property: " + Storm_list[2].damage_property + "\nDamage Crops: " + Storm_list[2].damage_crops
+    else: 
+        storm_response = "FAILURE! Couldn't find event ID."
+    
+    return storm_response
 
 def leave_dht(peername):
 
@@ -534,6 +573,10 @@ def command_execution(command_name):
         command_response = setup_dht(command[1], command[2], command[3])
     elif command[0] == "dht_complete":
         command_response = dht_complete(command[1])
+    elif command[0] == "query_dht":
+        command_response = query_dht(command[1])
+    elif command[0] == "find_event":
+        command_response = find_event(command[1])
     elif command[0] == "leave_dht":
         command_response = leave_dht(command[1])
     elif command[0] == "join_dht":
